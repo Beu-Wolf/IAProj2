@@ -1,3 +1,4 @@
+# Grupo 007 - Afonso Gonçalves 89399, Daniel Seara 89427
 import random
 
 # LearningAgent to implement
@@ -13,6 +14,12 @@ class LearningAgent:
                 # define this function
                 self.nS = nS
                 self.nA = nA
+
+                #Matrix with Q values
+                #number of iterations done??
+                #discount rate (1? 0.75?)
+                #learing rate (0.1? 0.5??)
+
                 # define this function
               
         
@@ -25,6 +32,8 @@ class LearningAgent:
         def selectactiontolearn(self,st,aa):
                 # define this function
                 # print("select one action to learn better")
+                
+                # TODO: Discuss between epsilon-greedy policy or Softmax function
 
                 a = 0
                 # define this function
@@ -40,6 +49,9 @@ class LearningAgent:
                 # define this function
                 a = 0
                 # print("select one action to see if I learned")
+
+                #select action with greatest Q value
+
                 return a
 
 
@@ -51,5 +63,7 @@ class LearningAgent:
         def learn(self,ost,nst,a,r):
                 # define this function
                 #print("learn something from this data")
+
+                #Normal Q value update with TD component
                 
                 return
