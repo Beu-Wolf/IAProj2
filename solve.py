@@ -54,6 +54,7 @@ class LearningAgent:
         # a - the index to the action in aa
         def selectactiontolearn(self,st,aa):
                 # TODO: Discuss between epsilon-greedy policy or Softmax function
+                # TODO: initial value for Qtable? 0 or negative value?
                 # podemos fazer bruteforce com varias politicas e vemos qual e a melhor. deixamos a correr no sigma e esta feito
                 if(not self.Qvals[st]):
                         self.Qvals[st] = [0 for _ in aa]
@@ -63,7 +64,7 @@ class LearningAgent:
                 decision = random.random()
                 for i in range(len(probs)):
                         if(probs[i] >= decision):
-                                return i
+                            return i
                 
                 return random.randrange(0, len(aa))
 
