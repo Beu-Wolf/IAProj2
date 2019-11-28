@@ -1,247 +1,175 @@
-import pickle
 import sys
 import time
 import random
 import curses
+import math
 from solve import *
+from aiEnv import *
 
-nStates = []
-maxActions = []
-initialState = []
-transitions = []
-rewards = []
+def trainAgent(A, T, R, I = 1, nIterations = 1000):
+        st = I  # initial state
 
-with open("mapasgraph2.pickle", "rb") as fp:   #Unpickling
-        AA = pickle.load(fp)
-
-def getns(envNumber):
-    return nStates[envNumber]
-
-
-def getma(envNumber):
-    return maxActions[envNumber]
-
-
-def getis(envNumber):
-    return initialState[envNumber]
-
-
-def gett(envNumber):
-    return transitions[envNumber]
-
-
-def getr(envNumber):
-    return rewards[envNumber]
-
-
-
-
-
-
-
-def setEnv0():
-    global nStates
-    global maxActions
-    global initialState
-    global transitions
-    global rewards
-
-    nStates.append(114)
-    maxActions.append(15)
-    initialState.append(1)
-    transitions.append(AA[0])
-    R = [-1]*114
-    R[7] = 1
-    R[1] = 0
-    R[2] = 0
-    R[3] = 0
-    R[4] = 0
-    rewards.append(R)
-
-def setEnv1():
-    global nStates
-    global maxActions
-    global initialState
-    global transitions
-    global rewards
-
-    nStates.append(114)
-    maxActions.append(15)
-    initialState.append(1)
-    transitions.append(AA[0])
-    R = [-1]*114
-    R[10] = 1
-    rewards.append(R)
-
-
-
-def runagent(A, T, R, I = 1, learningphase=True, nlearn = 1000, ntest = 100):
-        J = 0
-        if learningphase:
-                n = nlearn
-        else:
-                n = ntest
-                
-        st = I
+        n = nIterations
         for ii in range(1,n):
+                # get action to learn
                 aa = T[st][0]
-                if learningphase:
-                        a = A.selectactiontolearn(st,aa)
-                else:
-                        a = A.selectactiontoexecute(st,aa)
-                try:
-                        nst = T[st][0][a]
-                except:
-                        print(st,a)
-                r = R[st]
-                J += r
-                #print(st,nst,a,r)
+                a = A.selectactiontolearn(st,aa)
+                nst = T[st][0][a]
 
-                if learningphase:
-                        A.learn(st,nst,a,r)
-                else:
-                        #print(st,nst,a,r)
-                        pass
-                
+                # give reward
+                A.learn(st,nst,a,R[st])
+
+                # update state
+                st = nst
+
+                # if ii is multiple of 15, start from begining
+                if not ii%15:
+                        st = I
+
+def evaluateAgent(A, T, R, I = 1, nIterations = 100):
+        J = 0   # score
+        st = I  # initial state
+
+        n = nIterations
+        for ii in range(1,n):
+                # get 'best' state
+                aa = T[st][0]
+                a = A.selectactiontoexecute(st,aa)
+                nst = T[st][0][a]
+
+                # get reward
+                J += R[st]
                 st = nst
 
                 # if ii is multiple of 15
                 if not ii%15:
                         st = I
 
-        # avg reward
-        return J/n
+        return J/n # avg reward
 
-def testEnv(envNr, lr=0.9, gamma=0.9, tao=1, flearn = 1000, slearn = 10000):
+
+def testEnv(envNr, lr=0.9, gamma=0.9, tao=1, flearn = 1000, slearn = 10000, numReps = 1):
     ns = getns(envNr)
     ma = getma(envNr)
     iS = getis(envNr)
     T = gett(envNr)
     R = getr(envNr)
-    
-    res = [] # res[0] = fastScore, res[1] = slowScore
-    A = LearningAgent(ns,ma, lr, gamma, tao)
-    runagent(A, T, R, I = iS, learningphase=True, nlearn = flearn)
-    Jn = runagent(A, T, R, I = iS, learningphase=False, ntest = 10)
-    res.append(Jn)
 
-    runagent(A, T, R, I = iS, learningphase=True, nlearn = slearn)
-    Jn = runagent(A, T, R, I = iS, learningphase=False, ntest = 10)
-    res.append(Jn)
+    fLearnScore = 0
+    sLearnScore = 0
+    for rep in range(numReps):
+        A = LearningAgent(ns,ma, lr, gamma, tao)
+
+        # res = [fastscore, slowscore]
+        res = [] 
+
+        # first learn
+        trainAgent(A, T, R, I = iS, nIterations = flearn)
+        fLearnScore += evaluateAgent(A, T, R, I = iS, nIterations = 10)
+
+        # second learn
+        trainAgent(A, T, R, I = iS, nIterations = slearn)
+        sLearnScore += evaluateAgent(A, T, R, I = iS, nIterations = 10)
+    return [fLearnScore/numReps, sLearnScore/numReps]
+
+# genetic algorithm
+
+# envWeights = [0.3, 0.7]
+envWeights = [1, 0]
+runWeights = [0.67, 0.33]
+
+numSteps = [1000, 750, 500]
+stepWeights = [0.2, 0.3, 0.5]
+
+assert(sum(runWeights) == 1)
+assert(sum(envWeights) == 1)
+assert(sum(stepWeights) == 1 and len(stepWeights) == len(numSteps))
+
+
+POPSIZE = 200
+TAORANGE = 20
+NREPS = 5
+NPARENTS = 2
+MUTATIONRATE = [0.01, 0.01, 0.01]
+MUTATIONAMPLITUDE = [0.05, 0.05, TAORANGE/5]
+
+LIMSTEPS = 1
+
+def cumFitness(scores):
+    # make scores positive
+    mv = min(scores)
+    res = [scores[i] - mv for i in range(len(scores))]
+
+    # increase score difference
+    res = [math.exp(res[i]*10) for i in range(len(scores))]
+
+    # normalize scores
+    total = sum(res)
+    for i in range(1, len(res)):
+        res[i] += res[i-1]
+
+    for i in range(len(res)):
+        res[i] = res[i]/total
     return res
 
+# generate first population
+# agent = [lr, gamma, tao]
+population = [(random.random(), random.random(), random.random() * TAORANGE) for i in range(POPSIZE)]
 
-# due to the randomness in the learning process, we will run everythin NREP times
-# the final grades is based on the average on all of them
-def epoch(NREP = 5, lr = 0.9, gamma = 0.9, tao = 1):
-        NREP = 1
-        val = [0,0,0,0]
-        #print("exemplo 1")
-        for nrep in range(0,NREP):       
-                # create agent
-                A = LearningAgent(114,15, lr, gamma, tao)
+generation = 0
+while True:
+    generation += 1
 
-                # next states
-                T = AA[0]
+    # calculate fitness
+    results = [[] for _ in population]
+    scores = []
+    for agentID in range(len(population)):
+        agent = population[agentID]
+        score = 0
+        for env in range(NENVS):
+            # print(env)
+            for ns in range(min(LIMSTEPS, len(numSteps))):
+                # print(f"{stepWeights[ns]} -> {numSteps[ns]}")
+                out = testEnv(env, agent[0], agent[1], agent[2], flearn = ns, numReps = NREPS)
+                for outInd in range(len(out)):
+                    score += out[outInd] * runWeights[outInd] * stepWeights[ns] * envWeights[env]
+                results[agentID].append(out)
+        print(f"{agentID}/{POPSIZE}: {agent}\t{results[agentID]}\t{score}")
+        scores.append(score)
+    # print(scores)
+    genHighScore = max(scores)
+    probDistribution = cumFitness(scores)
+    # print(probDistribution)
 
-                # rewards
-                R = [-1]*114
-                R[7] = 1
-                R[1] = 0
-                R[2] = 0
-                R[3] = 0
-                R[4] = 0
-                
-                # T contains the list of possible next states
-                # T[14][0] - contains the possible next states of state 14
+    # next generation
+    nextGen = []
+    for _ in range(POPSIZE):
 
-                #print("# 1st learning phase")
-                # in this phase your agent will learn about the world
-                # after these steps the agent will be tested
-                runagent(A, T, R, I = 1, learningphase=True, nlearn = 500)
-                #print("# testing phase")
-                # in this phase your agent will execute what it learned in the world
-                # the total reward obtained needs to be the optimal
-                Jn = runagent(A, T, R, I = 1, learningphase=False, ntest = 10)
-                val[0] += Jn
-                print("average reward",Jn)
-                #print("# 2nd learning phase")
-                runagent(A, T, R, I = 1, learningphase=True, nlearn = 10000)
-                #print("# testing phase")
-                Jn = runagent(A, T, R, I = 1, learningphase=False, ntest = 10)
-                val[1] += Jn
-                print("average reward",Jn)
+        # chose parents
+        parents = []
+        for p in range(NPARENTS):
+            decision = random.random()
+            for i in range(len(probDistribution)):
+                    if(probDistribution[i] >= decision):
+                        parents.append(population[i])
+                        break
 
-        #print("exemplo 2")
-        for nrep in range(0,NREP):
-                A = LearningAgent(114,15, lr, gamma, tao)
+        # reproduce
+        # print(parents)
+        child = [sum(q)/len(q) for q in list(zip(*parents))]
+        # print(child)
+    
+        # mutate
+        for i in range(len(child)):
+            if random.random() < MUTATIONRATE[i]:
+                child[i] += (random.random() - 0.5) * MUTATIONAMPLITUDE[i]
 
-                T = AA[0]
-                R = [-1]*114
-                R[10] = 1
-                # T contains the list of possible next states
-                # T[14][0] - contains the possible next states of state 14
+        nextGen.append(tuple(child))
 
+    # print(nextGen)
+    population = nextGen
+    print(f"{generation}: {genHighScore}")
 
-                #print("# learning phase")
-                # in this phase your agent will learn about the world
-                # after these steps the agent will be tested
-                # runagent(A, T, R, I = 1, learningphase=True, nlearn = 500) # mais critico. usar para testes de stresse?
-                # runagent(A, T, R, I = 1, learningphase=True, nlearn = 750) # mais critico. usar para testes de stresse?
-                runagent(A, T, R, I = 1, learningphase=True, nlearn = 1000)
-                #print("# testing phase")
-                # in this phase your agent will execute what it learned in the world
-                # the total reward obtained needs to be the optimal
-                Jn = runagent(A, T, R, I = 1, learningphase=False, ntest = 10)
-                val[2] += Jn
-                print("average reward",Jn)
-                #print("# 2nd learning phase")
-                runagent(A, T, R, I = 1, learningphase=True, nlearn = 10000)
-                #print("# testing phase")
-                Jn = runagent(A, T, R, I = 1, learningphase=False, ntest = 10)
-                val[3] += Jn
-                print("average reward",Jn)        
+# for i in range(2):
+    # print(testEnv(i))
 
-
-        val = list([ii/NREP for ii in val])
-        #print(val)
-        cor = [(val[0]) >= 0.3, (val[1]) >= 0.3, (val[2]) >= -0.85, (val[3]) >= -0.6]
-        # these values are not the optimal, they include some slack
-        #print(cor)
-
-        grade = 0
-        for correct,mark in zip(cor,[3,7,3,7]):
-                if correct:
-                        grade += mark
-        #print("Grade in these tests (the final will also include hidden tests) : ", grade)
-        return grade
-
-setEnv0()
-setEnv1()
-
-for i in range(2):
-    print(testEnv(i))
-
-epoch()
-
-quit()
-
-'''
-sum = 0
-for j in range(100):
-    i = 1
-    while(epoch() == 20):
-            print(i, end=' ')
-            sys.stdout.flush()
-            i+=1
-    percent = (i-1)/i
-    print(f"\ngrade[{j}] percentage: {percent}")
-    sum+=(i-1)/(i * 100)
-
-print("avgGrade percentage: {}".format((sum)))
-'''
-
-for i in range(101):
-    print(f"[{'='*i}>{' '*(100-i)}]{i}%", end="\r")
-    time.sleep(0.1)
-print("")
