@@ -43,7 +43,10 @@ class LearningAgent:
                 self.tao = tao                  # exploitation rate.
                                                 #       can change with learningCount
 
+                self.learningDiscount = 0.95
+
                 self.Qvals = [False for _ in range(nS)]
+                self.Alphavals = [[self.lr for _ in range(self.nA)] for _ in range(self.nS)] 
 
 
         # Select one action, used when learning  
@@ -62,8 +65,8 @@ class LearningAgent:
                 probs = softMaxDistribution(self.Qvals[st], self.tao)
                 decision = random.random()
                 for i in range(len(probs)):
-                        if(probs[i] >= decision):
-                                return i
+                       if(probs[i] >= decision):
+                               return i
                 
                 return random.randrange(0, len(aa))
 
@@ -83,4 +86,6 @@ class LearningAgent:
         # a - the index to the action taken
         # r - reward obtained
         def learn(self,ost,nst,a,r):
-                self.Qvals[ost][a] += self.lr * (r + (self.gamma * max(self.Qvals[nst]) if self.Qvals[nst] else 0) - self.Qvals[ost][a])
+                learningRate = self.Alphavals[ost][a]
+                self.Alphavals[ost][a] *= self.learningDiscount
+                self.Qvals[ost][a] += learningRate * (r + (self.gamma * max(self.Qvals[nst]) if self.Qvals[nst] else 0) - self.Qvals[ost][a])
