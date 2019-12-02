@@ -37,7 +37,6 @@ class LearningAgent:
                 self.nA = nA
 
                 # meta parameters
-                self.learningCount = 0          # number of learning steps
                 self.lr = lr                    # learing rate (0.1? 0.5??)
                 self.gamma = gamma              # discount rate (1? 0.75?)
                 self.tao = tao                  # exploitation rate.
