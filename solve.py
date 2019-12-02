@@ -59,6 +59,9 @@ class LearningAgent:
                 if(not self.Qvals[st]):
                         self.Qvals[st] = [0 for _ in aa]
         
+                if all([ qv == 0 for qv in self.Qvals[st]]):
+                    return random.randrange(0, len(aa))
+
                 # softmax
                 probs = softMaxDistribution(self.Qvals[st], self.tao)
                 decision = random.random()

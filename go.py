@@ -72,6 +72,11 @@ def testEnv(envNr, lr=0.9, gamma=0.9, tao=1, flearn = 1000, slearn = 10000, numR
         sLearnScore += evaluateAgent(A, T, R, I = iS, nIterations = 10)
     return [fLearnScore/numReps, sLearnScore/numReps]
 
+
+quit()
+
+
+
 # genetic algorithm
 
 # envWeights = [0.3, 0.7]
