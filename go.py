@@ -92,7 +92,7 @@ assert(sum(envWeights) == 1)
 assert(sum(stepWeights) == 1 and len(stepWeights) == len(numSteps))
 
 
-POPSIZE = 20
+POPSIZE = 200
 TAORANGE = 9
 NREPS = 5
 NPARENTS = 2
@@ -150,7 +150,7 @@ while True:
                 out = testEnv(env, agent[0], agent[1], agent[2], flearn = ns, numReps = NREPS)
                 results[agentID].append(out)
         scores.append(score(results[agentID]))
-        if(scores[agentID] > bestScore):
+        if(scores[agentID] >= bestScore):
             bestScore = scores[agentID]
             bestResults = results[agentID]
             bestAgent = agent
