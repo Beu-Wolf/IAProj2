@@ -8,8 +8,34 @@ initialState = []
 transitions = []
 rewards = []
 
+
 with open("mapasgraph2.pickle", "rb") as fp:   #Unpickling
         AA = pickle.load(fp)
+
+def bfs(src, dst):
+    global transitions
+    transitions.append(AA[0])
+    
+
+    searchThree = {
+            src: 0,
+        }
+
+    queue = []
+    queue.append(src)
+
+
+    while(len(queue) != 0):
+        curr = queue.pop(0)
+        if(curr == dst):
+            return searchThree[curr]
+        
+        depth = searchThree[curr]+1
+        for a in transitions[0][curr][0]:
+            if(a not in searchThree):
+                queue.append(a)
+                searchThree[a] = depth
+    return False
 
 def getns(envNumber):
     return nStates[envNumber]
@@ -81,9 +107,18 @@ def createEnvironment(src, dst):
     R = [-1] * 114
 
     # BFS to find minimum 
-
+    pathCost = bfs(src, dst)
+    print(pathCost)
     # definir reward do objetivo (custo optimo = 0)
-    # return indice do novo ambiente
 
-setEnv0()
-setEnv1()
+    R[dst] = pathCost
+
+    # return indice do novo ambiente
+    rewards.append(R)
+    return len(rewards)-1
+
+
+# setEnv0()
+# setEnv1()
+
+createEnvironment(3, 7)
