@@ -2,6 +2,7 @@ import sys
 import time
 import random
 import curses
+import os
 import math
 from solve import *
 from aiEnv import *
@@ -73,7 +74,7 @@ def testEnv(envNr, lr=0.9, gamma=0.9, tao=1, flearn = 1000, slearn = 10000, numR
     return [fLearnScore/numReps, sLearnScore/numReps]
 
 
-quit()
+# quit()
 
 
 
@@ -91,8 +92,8 @@ assert(sum(envWeights) == 1)
 assert(sum(stepWeights) == 1 and len(stepWeights) == len(numSteps))
 
 
-POPSIZE = 200
-TAORANGE = 20
+POPSIZE = 20
+TAORANGE = 9
 NREPS = 5
 NPARENTS = 2
 MUTATIONRATE = [0.01, 0.01, 0.01]
@@ -117,31 +118,51 @@ def cumFitness(scores):
         res[i] = res[i]/total
     return res
 
+def score(results):
+    return results[-1][0]
+
 # generate first population
 # agent = [lr, gamma, tao]
 population = [(random.random(), random.random(), random.random() * TAORANGE) for i in range(POPSIZE)]
 
+bestAgent = population[0]
+bestResults = [['?'] * 2]*2
+bestScore = -math.inf
+print('\n'*6)
+
 generation = 0
 while True:
     generation += 1
+    
+    maxDigitSize = len(str(POPSIZE))
+    existingDigits = len('[=>](/)')
+    rightPadding = 0
+    extra = existingDigits + 2*maxDigitSize + rightPadding
+    cols = os.get_terminal_size(1).columns
 
     # calculate fitness
     results = [[] for _ in population]
     scores = []
     for agentID in range(len(population)):
         agent = population[agentID]
-        score = 0
         for env in range(NENVS):
-            # print(env)
             for ns in range(min(LIMSTEPS, len(numSteps))):
-                # print(f"{stepWeights[ns]} -> {numSteps[ns]}")
                 out = testEnv(env, agent[0], agent[1], agent[2], flearn = ns, numReps = NREPS)
-                for outInd in range(len(out)):
-                    score += out[outInd] * runWeights[outInd] * stepWeights[ns] * envWeights[env]
                 results[agentID].append(out)
-        print(f"{agentID}/{POPSIZE}: {agent}\t{results[agentID]}\t{score}")
-        scores.append(score)
-    # print(scores)
+        scores.append(score(results[agentID]))
+        if(scores[agentID] > bestScore):
+            bestScore = scores[agentID]
+            bestResults = results[agentID]
+            bestAgent = agent
+        percent = int(agentID/POPSIZE * (cols - extra))
+        sys.stdout.write(u"\u001b[" + str(5) + "A") # Move up
+        print(f"melhor agente: ({bestAgent[0]:.4f}, {bestAgent[1]:.4f}, {bestAgent[2]:.4f}) [[{bestResults[0][0]:.4f}, {bestResults[0][1]:.4f}], [{bestResults[1][0]:.4f}, {bestResults[1][1]}]]: {{{bestScore:.4f}}}\n")
+        # print(f"melhor geracao: ({random.random():.4f}, {random.random():.4f}, {random.random():.4f}) [[{random.random():.4f}, {random.random():.4f}], [{random.random():.4f}]]: {{{random.random():.4f}}}\n")
+        print(f"Generation #{generation}:")
+        # print(f"[{'=' * percent}>{' ' * (cols - percent)}] ({j:03}/{n:03})")
+        print(f"[={'=' * max([percent, 0])}>{' ' * (cols - percent - extra)}]({agentID:0{maxDigitSize}}/{POPSIZE:0{maxDigitSize}})")
+        print(f"({agent[0]:.4f}, {agent[1]:.4f}, {agent[2]:.4f}) [[{results[agentID][0][0]:.4f}, {results[agentID][0][1]:.4f}], [{results[agentID][1][0]:.4f}, {results[agentID][1][1]:.4f}]]: {{{scores[agentID]:.4f}}}")
+        # input()
     genHighScore = max(scores)
     probDistribution = cumFitness(scores)
     # print(probDistribution)
@@ -173,7 +194,7 @@ while True:
 
     # print(nextGen)
     population = nextGen
-    print(f"{generation}: {genHighScore}")
+    # print(f"{generation}: {genHighScore}")
 
 # for i in range(2):
     # print(testEnv(i))
