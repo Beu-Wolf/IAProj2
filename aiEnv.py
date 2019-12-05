@@ -1,6 +1,7 @@
 import pickle
+import random
 
-NENVS = 2
+NENVS = 0
 
 nStates = []
 maxActions = []
@@ -12,18 +13,13 @@ rewards = []
 with open("mapasgraph2.pickle", "rb") as fp:   #Unpickling
         AA = pickle.load(fp)
 
-def bfs(src, dst):
-    global transitions
-    transitions.append(AA[0])
-    
-
+def bfs(model, src, dst):
     searchThree = {
-            src: 0,
-        }
+        src: 0
+    }
 
     queue = []
     queue.append(src)
-
 
     while(len(queue) != 0):
         curr = queue.pop(0)
@@ -31,7 +27,7 @@ def bfs(src, dst):
             return searchThree[curr]
         
         depth = searchThree[curr]+1
-        for a in transitions[0][curr][0]:
+        for a in model[curr][0]:
             if(a not in searchThree):
                 queue.append(a)
                 searchThree[a] = depth
@@ -96,6 +92,7 @@ def createEnvironment(src, dst):
     global initialState
     global transitions
     global rewards
+    global NENVS
 
     assert len(nStates) == len(maxActions) == len(initialState) == len(transitions) == len(rewards)
 
@@ -104,21 +101,32 @@ def createEnvironment(src, dst):
     initialState.append(src)
     transitions.append(AA[0])
 
-    R = [-1] * 114
+    stateCost = -1
+    R = [stateCost] * 114
 
     # BFS to find minimum 
-    pathCost = bfs(src, dst)
+    pathCost = bfs(transitions[-1], src, dst)
     print(pathCost)
-    # definir reward do objetivo (custo optimo = 0)
 
-    R[dst] = pathCost
+    # definir reward do objetivo (custo optimo = 0)
+    R[dst] = -(pathCost * stateCost)
 
     # return indice do novo ambiente
     rewards.append(R)
+    NENVS += 1
     return len(rewards)-1
 
 
 # setEnv0()
 # setEnv1()
 
-createEnvironment(3, 7)
+for i in range(5):
+    src = random.randint(1, 114-1)
+    dst = random.randint(1,114-1)
+    while dst == src:
+        dst = random.randint(1,114-1)
+
+    print("src: ", src)
+    print("dst: ", dst)
+
+    createEnvironment(src, dst)
