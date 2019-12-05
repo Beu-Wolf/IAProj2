@@ -32,7 +32,7 @@ class LearningAgent:
         # nS maximum number of states
         # nA maximum number of action per state
         #def __init__(self,nS,nA):
-        def __init__(self,nS,nA, lr = 0.9, gamma = 0.9, tao = 1):
+        def __init__(self,nS,nA, lr = 0.995, gamma = 0.98, tao = 1):
                 self.nS = nS
                 self.nA = nA
 
@@ -42,7 +42,7 @@ class LearningAgent:
                 self.tao = tao                  # exploitation rate.
                                                 #       can change with learningCount
 
-                self.learningDiscount = 0.95
+                self.learningDiscount = 0.9
 
                 self.Qvals = [False for _ in range(nS)]
                 self.Alphavals = [[self.lr for _ in range(self.nA)] for _ in range(self.nS)] 

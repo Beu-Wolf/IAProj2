@@ -44,7 +44,7 @@ def runagent(A, T, R, I = 1, learningphase=True, nlearn = 1000, ntest = 100):
 
 # due to the randomness in the learning process, we will run everythin NREP times
 # the final grades is based on the average on all of them
-def epoch(NREP = 5, lr = 0.9, gamma = 0.9, tao = 1):
+def epoch(NREP = 5, lr = 0.995, gamma = 0.98, tao = 1):
         val = [0,0,0,0]
         #print("exemplo 1")
         for nrep in range(0,NREP):       
@@ -108,7 +108,7 @@ def epoch(NREP = 5, lr = 0.9, gamma = 0.9, tao = 1):
 
 
         val = list([ii/NREP for ii in val])
-        #print(val)
+        print(val)
         cor = [(val[0]) >= 0.3, (val[1]) >= 0.3, (val[2]) >= -0.85, (val[3]) >= -0.6]
         # these values are not the optimal, they include some slack
         #print(cor)
