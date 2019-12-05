@@ -40,6 +40,8 @@ def evaluateAgent(A, T, R, I = 1, nIterations = 100):
 
                 # get reward
                 J += R[st]
+                if(R[st] > 0):
+                        break
                 st = nst
 
                 # if ii is multiple of 15
@@ -49,7 +51,7 @@ def evaluateAgent(A, T, R, I = 1, nIterations = 100):
         return J/n # avg reward
 
 
-def testEnv(envNr, lr=0.9, gamma=0.9, tao=1, flearn = 1000, slearn = 10000, numReps = 1):
+def testEnv(envNr, lr=0.995, gamma=0.98, tao=1, flearn = 10000, slearn = 100000, numReps = 1):
     ns = getns(envNr)
     ma = getma(envNr)
     iS = getis(envNr)
@@ -73,5 +75,8 @@ def testEnv(envNr, lr=0.9, gamma=0.9, tao=1, flearn = 1000, slearn = 10000, numR
         sLearnScore += evaluateAgent(A, T, R, I = iS, nIterations = 10)
     return [fLearnScore/numReps, sLearnScore/numReps]
 
+while True:
+        randomEnv()
+        print(testEnv(NENVS - 1))
 
 # quit()

@@ -6,6 +6,7 @@ NENVS = 0
 nStates = []
 maxActions = []
 initialState = []
+destState = []
 transitions = []
 rewards = []
 
@@ -52,6 +53,9 @@ def gett(envNumber):
 def getr(envNumber):
     return rewards[envNumber]
 
+def getdst(envNumber):
+    return destState[envNumber]
+
 def setEnv0():
     global nStates
     global maxActions
@@ -62,6 +66,7 @@ def setEnv0():
     nStates.append(114)
     maxActions.append(15)
     initialState.append(1)
+    destState.append(7)
     transitions.append(AA[0])
     R = [-1]*114
     R[7] = 1
@@ -82,6 +87,7 @@ def setEnv1():
     maxActions.append(15)
     initialState.append(1)
     transitions.append(AA[0])
+    destState.append(10)
     R = [-1]*114
     R[10] = 1
     rewards.append(R)
@@ -100,33 +106,38 @@ def createEnvironment(src, dst):
     maxActions.append(15)
     initialState.append(src)
     transitions.append(AA[0])
+    destState.append(dst)
 
     stateCost = -1
     R = [stateCost] * 114
 
     # BFS to find minimum 
     pathCost = bfs(transitions[-1], src, dst)
-    print(pathCost)
+    # print(pathCost)
 
     # definir reward do objetivo (custo optimo = 0)
-    R[dst] = -(pathCost * stateCost)
+    R[dst] = -((pathCost) * stateCost)
 
     # return indice do novo ambiente
     rewards.append(R)
     NENVS += 1
-    return len(rewards)-1
+    return pathCost
 
-
-# setEnv0()
-# setEnv1()
-
-for i in range(5):
+def randomEnv():
     src = random.randint(1, 114-1)
     dst = random.randint(1,114-1)
-    while dst == src:
+    while dst == src and bfs(AA[0], src, dst) >= 10:
         dst = random.randint(1,114-1)
 
-    print("src: ", src)
-    print("dst: ", dst)
+    cost = createEnvironment(src, dst)
+    print(f"Creating environment {src: 3} -> {dst: 3} in {cost: 2} steps")
 
-    createEnvironment(src, dst)
+
+# for i in range(10):
+#     src = random.randint(1, 114-1)
+#     dst = random.randint(1,114-1)
+#     while dst == src and bfs(AA[0], src, dst) >= 10:
+#         dst = random.randint(1,114-1)
+
+#     cost = createEnvironment(src, dst)
+#     print(f"Creating environment {src: 3} -> {dst: 3} in {cost: 2} steps")

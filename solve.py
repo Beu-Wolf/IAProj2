@@ -32,7 +32,7 @@ class LearningAgent:
         # nS maximum number of states
         # nA maximum number of action per state
         #def __init__(self,nS,nA):
-        def __init__(self,nS,nA, lr = 0.9, gamma = 0.9, tao = 1):
+        def __init__(self,nS,nA, lr = 0.995, gamma = 0.98, tao = 1):
                 self.nS = nS
                 self.nA = nA
 
@@ -42,8 +42,9 @@ class LearningAgent:
                 self.gamma = gamma              # discount rate (1? 0.75?)
                 self.tao = tao                  # exploitation rate.
                                                 #       can change with learningCount
-
+                self.learningDiscount = 0.9
                 self.Qvals = [False for _ in range(nS)]
+                self.Alphavals = [[self.lr for _ in range(self.nA)] for _ in range(self.nS)]
 
 
         # Select one action, used when learning  
@@ -53,8 +54,6 @@ class LearningAgent:
         # returns
         # a - the index to the action in aa
         def selectactiontolearn(self,st,aa):
-                # TODO: Discuss between epsilon-greedy policy or Softmax function
-                # TODO: initial value for Qtable? 0 or negative value?
                 # podemos fazer bruteforce com varias politicas e vemos qual e a melhor. deixamos a correr no sigma e esta feito
                 if(not self.Qvals[st]):
                         self.Qvals[st] = [0 for _ in aa]
@@ -87,4 +86,5 @@ class LearningAgent:
         # a - the index to the action taken
         # r - reward obtained
         def learn(self,ost,nst,a,r):
-                self.Qvals[ost][a] += self.lr * (r + (self.gamma * max(self.Qvals[nst]) if self.Qvals[nst] else 0) - self.Qvals[ost][a])
+                self.Alphavals[ost][a] *= self.learningDiscount
+                self.Qvals[ost][a] += self.Alphavals[ost][a] * (r + (self.gamma * max(self.Qvals[nst]) if self.Qvals[nst] else 0) - self.Qvals[ost][a])
